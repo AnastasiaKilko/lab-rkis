@@ -4,6 +4,7 @@
         <legend>
             <h1>{{question.question_text}}</h1>
         </legend>
+        <p>{{question.description}}</p>
         {% if error_message %}<p><strong> {{error_message}}</strong></p>{% endif %}
         {% for choice in question.choice_set.all %}
         <input type="radio" name="choice" id="choice{{forloop.counter}}" value="{{choice.id}}">
@@ -12,3 +13,8 @@
     </fieldset>
 <input type="submit" value="Vote">
 </form>
+{% if question.author == user %}
+    <a href="{% url 'polls:addvariants' question.id%}">Добавить варианты ответов</a>
+{% endif %}
+<br>
+<a href="{% url 'polls:index'%}">Вернуться на главную страницу</a>

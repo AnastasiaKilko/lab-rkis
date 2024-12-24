@@ -10,4 +10,13 @@ urlpatterns = [
     path('<int:pk>/', views.DetailView.as_view(), name='detail'),
     path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
     path('<int:question_id>/vote/', views.vote, name='vote'),
+    path('register', views.register_page, name = 'register'),
+    path('createquestion', views.create_question_view, name = 'createquestion'),
+    path('addavatar', views.add_avatar, name = 'addavatar'),
+    path('profile', views.profile_view, name = 'profile'),
+    path('<int:pk>/addvariants', views.add_variant, name='addvariants'),
+    path('<int:pk>/changeimg', views.change_img, name='changeimg'),
+     path('<pk>/deleteuser/', views.UserDeleteView.as_view(), name='deleteuser'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

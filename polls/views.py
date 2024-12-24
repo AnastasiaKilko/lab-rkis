@@ -1,10 +1,14 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
-from .models import Question, Choice
-from django.template import loader
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from .models import Question, Choice, Avatar
 from django.urls import reverse
 from django.views import generic
-
+from .forms import QuestionForm, UserForm, AvatarForm, ChoiceForm
+from django.contrib.auth import authenticate, login
+from datetime import timedelta, datetime
+from django.urls import reverse_lazy
+from django.contrib.auth.models import User
+from django.views.generic.edit import DeleteView
 
 class IndexView(generic.ListView):
     template_name = 'polls/index.html'
@@ -12,6 +16,11 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         return Question.objects.order_by('-pub_date')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(IndexView, self).get_context_data(*args, **kwargs)
+        context['today'] = datetime.now()
+        return context
 
 
 class DetailView(generic.DetailView):
@@ -37,3 +46,101 @@ def vote(request, question_id):
         selected_choice.votes += 1
         selected_choice.save()
         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+
+def register_page(request):
+    if request.method != 'POST':
+        form = UserForm()
+    else:
+        form = UserForm(request.POST, request.FILES)
+        if form.is_valid():
+            user = form.save()
+            user.save()
+            user = authenticate(username=user.username, password=form.cleaned_data['password1'])
+            login(request, user)
+            return redirect('polls:addavatar')
+
+    context = {'form': form}
+
+    return render(request, 'register.html', context)
+
+
+
+def add_variant(request, pk):
+    if request.method == 'GET':
+        form = ChoiceForm()
+        return render(request, 'polls/choice_form.html', { 'form': form})
+    if request.method == 'POST':
+        form = ChoiceForm(request.POST)
+        if form.is_valid():
+            choice_text = form.cleaned_data.get("choice_text")
+            question = get_object_or_404(Question, pk=pk)
+            obj = Choice.objects.create(choice_text = choice_text, question = question)
+            obj.save()
+            return redirect('polls:index')
+        else:
+            return render(request, 'polls/choice_form.html', {'form': form})
+
+
+def create_question_view(request):
+    if request.method == 'GET':
+        form = QuestionForm()
+        return render(request, 'polls/question_form.html', { 'form': form})
+    if request.method == 'POST':
+        form = QuestionForm(request.POST, request.FILES)
+        if form.is_valid():
+            question_text = form.cleaned_data.get("question_text")
+            description = form.cleaned_data.get("description")
+            short_description = form.cleaned_data.get("short_description")
+            image = form.cleaned_data.get("image")
+            pub_date = datetime.now()
+            exp_date = pub_date + timedelta(days=10)
+            author = request.user
+            obj = Question.objects.create(image = image, description=description, short_description=short_description, question_text = question_text, pub_date = pub_date, exp_date = exp_date, author = author)
+            obj.save()
+            return redirect('polls:index')
+        else:
+            return render(request, 'polls/question_form.html', {'form': form})
+
+def add_avatar(request):
+    if request.method == 'GET':
+        form = AvatarForm()
+        return render(request, 'polls/add_avatar.html', { 'form': form})
+    if request.method == 'POST':
+        form = AvatarForm(request.POST, request.FILES)
+        if form.is_valid():
+            image = form.cleaned_data.get("image")
+            if request.user.is_authenticated:
+                username = request.user.username
+            obj = Avatar.objects.create(image = image, username = username)
+            obj.save()
+            return redirect('polls:index')
+        else:
+            return render(request, 'polls/add_avatar.html', {'form': form})
+
+def profile_view(request):
+    name = request.user.username
+    if Avatar.objects.filter(username=name):
+        avatar = Avatar.objects.get(username=name)
+    else:
+        avatar = Avatar.objects.get(username='default')
+    email = request.user.email
+    return render(request,'polls/profile.html', context={'avatar': avatar, 'email': email, 'name':name},)
+
+def change_img(request, pk):
+    if request.method == 'GET':
+        form = AvatarForm()
+        return render(request, 'polls/change_avatar.html', { 'form': form})
+    if request.method == 'POST':
+        form = AvatarForm(request.POST, request.FILES)
+        if form.is_valid():
+            image = form.cleaned_data.get("image")
+            avatar = get_object_or_404(Avatar, pk=pk)
+            avatar.image=image
+            avatar.save()
+            return redirect('polls:profile')
+        else:
+            return render(request, 'polls/change_avatar.html', {'form': form})
+
+class UserDeleteView(DeleteView):
+    model = User
+    success_url = reverse_lazy("polls:index")

@@ -5,3 +5,5 @@
     {% endfor %}
 </ul>
 <a href="{% url 'polls:detail'  question.id %}">выбрать еще раз? </a>
+<br>
+<a href="{% url 'polls:index'%}">Вернуться на главную страницу</a>

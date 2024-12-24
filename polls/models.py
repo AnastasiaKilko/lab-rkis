@@ -7,7 +7,7 @@ from django.utils import timezone
 class Question(models.Model):
     question_text = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date published')
-    image = models.ImageField(upload_to="uploads/", null=True, blank=True,
+    image = models.ImageField(upload_to="images/", null=True, blank=True,
                               help_text="Загрузите изображение для вопроса")
     author = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     exp_date = models.DateTimeField(null=True, blank=True)
@@ -31,5 +31,5 @@ class Choice(models.Model):
 
 
 class Avatar(models.Model):
-    image = models.ImageField(upload_to="uploads/", null=True, blank=False)
+    image = models.ImageField(upload_to="images/", null=True, blank=False)
     username = models.CharField(max_length=20)
